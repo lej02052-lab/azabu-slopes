@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>麻布の坂 街歩きガイドブック ― 坂の個性と都市形成の歴史</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --washi:#F4EDD4;
+  --washi2:#EDE4C8;
+  --ink:#1C1928;
+  --ink2:#3A3652;
+  --verm:#C23429;
+  --gold:#C29520;
+  --sepia:#7A5A1E;
+  --indigo:#2A4D8A;
+  --sage:#4F7850;
+  --feudal:#8C2820;
+  --nature:#3A6B3C;
+  --commercial:#9A6410;
+  --religion:#424680;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;background:var(--washi);color:var(--ink);line-height:1.8;font-size:14px;}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(150deg,#171428 0%,#241F40 45%,#1C3040 100%);
+  color:#F4EDD4;padding:3.5rem 2rem 2.5rem;text-align:center;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(200,170,80,.08) 60px),
+    repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(200,170,80,.08) 60px);
+}
+.hero-eyebrow{font-size:.75rem;letter-spacing:.35em;color:#C29520;margin-bottom:1rem;position:relative;}
+.hero h1{font-family:'Noto Serif JP',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:700;line-height:1.25;letter-spacing:.08em;position:relative;}
+.hero h1 span{color:#C29520;}
+.hero-sub{font-size:.9rem;opacity:.75;margin:.75rem 0 2rem;letter-spacing:.15em;position:relative;}
+.hero-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:.75rem;position:relative;}
+.chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:.25rem .9rem;border-radius:2px;font-size:.75rem;letter-spacing:.05em;}
+
+/* ── TOPO ── */
+.topo-wrap{background:#EDE6CC;border-bottom:2px solid var(--gold);padding:1.5rem 1rem 1rem;overflow-x:auto;}
+.topo-label{font-size:.7rem;letter-spacing:.25em;color:var(--sepia);text-align:center;margin-bottom:.75rem;}
+
+/* ── SECTIONS ── */
+.outer{max-width:1080px;margin:0 auto;padding:2.5rem 1.25rem;}
+.sec-head{display:flex;align-items:baseline;gap:.75rem;border-bottom:2px solid var(--gold);padding-bottom:.6rem;margin-bottom:1.75rem;}
+.sec-num{font-family:'Noto Serif JP',serif;font-size:2.4rem;font-weight:700;color:var(--gold);line-height:1;}
+.sec-title{font-family:'Noto Serif JP',serif;font-size:1.3rem;font-weight:700;}
+.sec-sub{font-size:.8rem;color:var(--sepia);letter-spacing:.1em;margin-top:.2rem;}
+
+/* ── MAP ── */
+#map{height:480px;border:2px solid var(--sepia);}
+.map-note{font-size:.72rem;color:var(--sepia);margin-top:.4rem;}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;}
+.leg-item{display:flex;align-items:center;gap:.4rem;font-size:.78rem;}
+.leg-dot{width:13px;height:13px;border-radius:2px;flex-shrink:0;}
+
+/* ── SLOPE GRID ── */
+.slope-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.1rem;}
+.slope-card{
+  background:var(--washi);border:1px solid rgba(122,90,30,.22);
+  border-left:4px solid var(--feudal);padding:1.2rem;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+}
+.slope-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.09);}
+.slope-card.nature{border-left-color:var(--nature);}
+.slope-card.commercial{border-left-color:var(--commercial);}
+.slope-card.religion{border-left-color:var(--religion);}
+.c-badge{display:inline-block;font-size:.68rem;letter-spacing:.12em;padding:2px 8px;border-radius:2px;margin-bottom:.65rem;}
+.c-badge.feudal{background:var(--feudal);color:#fff;}
+.c-badge.nature{background:var(--nature);color:#fff;}
+.c-badge.commercial{background:var(--commercial);color:#fff;}
+.c-badge.religion{background:var(--religion);color:#fff;}
+.c-name{font-family:'Noto Serif JP',serif;font-size:1.35rem;font-weight:700;line-height:1.2;}
+.c-kana{font-size:.73rem;color:var(--sepia);letter-spacing:.1em;margin:.3rem 0 .7rem;}
+.c-label{font-size:.68rem;color:var(--gold);letter-spacing:.12em;font-weight:700;margin-bottom:.2rem;}
+.c-text{font-size:.83rem;color:var(--ink2);}
+.c-expand{display:none;margin-top:.85rem;padding-top:.85rem;border-top:1px dotted rgba(120,90,30,.3);}
+.slope-card.open .c-expand{display:block;}
+.c-inv{background:#EDF2F8;border-left:3px solid var(--indigo);padding:.65rem .85rem;margin-top:.75rem;font-size:.78rem;color:var(--indigo);}
+.c-inv strong{display:block;font-size:.68rem;letter-spacing:.15em;margin-bottom:.2rem;}
+.c-toggle{font-size:.7rem;color:var(--sepia);text-align:right;margin-top:.5rem;}
+
+/* ── ROUTE ── */
+.route-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:680px){.route-grid{grid-template-columns:1fr;}.hero h1{font-size:1.8rem;}}
+.route-card{background:var(--washi);border:1px solid rgba(122,90,30,.22);padding:1.5rem;}
+.r-tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.2em;padding:3px 10px;margin-bottom:.9rem;}
+.r-tag.a{background:var(--verm);color:#fff;}
+.r-tag.b{background:var(--indigo);color:#fff;}
+.r-title{font-family:'Noto Serif JP',serif;font-size:1.05rem;font-weight:600;margin-bottom:.4rem;line-height:1.4;}
+.r-meta{font-size:.78rem;color:var(--sepia);margin-bottom:.9rem;}
+.r-stops{list-style:none;padding-left:1.6rem;position:relative;}
+.r-stops::before{content:'';position:absolute;left:.42rem;top:.5rem;bottom:.5rem;width:2px;
+  background:repeating-linear-gradient(to bottom,var(--gold) 0,var(--gold) 5px,transparent 5px,transparent 10px);}
+.r-stops li{position:relative;font-size:.82rem;padding:.32rem 0;}
+.r-stops li::before{content:'';position:absolute;left:-1.22rem;top:50%;transform:translateY(-50%);
+  width:10px;height:10px;background:var(--gold);border-radius:50%;}
+.r-stops li.endpoint::before{background:var(--verm);width:12px;height:12px;left:-1.3rem;}
+.r-theme{margin-top:1rem;padding:.7rem .9rem;font-size:.78rem;}
+.r-theme.a{background:#FCF5E2;border-left:3px solid var(--verm);}
+.r-theme.b{background:#ECF0F9;border-left:3px solid var(--indigo);}
+
+/* ── WORKSHEET ── */
+.ws-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
+@media(max-width:680px){.ws-grid{grid-template-columns:1fr;}}
+.ws-box{background:#fff;padding:1.25rem;border:1px solid var(--sage);}
+.ws-h{font-family:'Noto Serif JP',serif;font-size:.92rem;color:var(--sage);margin-bottom:.85rem;font-weight:600;}
+.ws-field{font-size:.82rem;line-height:2.1;}
+.ws-line{border-bottom:1px solid #ccc;height:28px;margin:.2rem 0;}
+
+/* ── TIMELINE ── */
+.tl-wrap{background:var(--ink);color:rgba(244,237,212,.88);padding:3rem 1.5rem;}
+.tl-inner{max-width:900px;margin:0 auto;}
+.tl-title{font-family:'Noto Serif JP',serif;font-size:1.2rem;color:var(--gold);border-bottom:1px solid var(--gold);padding-bottom:.6rem;margin-bottom:2rem;}
+.tl-list{position:relative;padding-left:2rem;}
+.tl-list::before{content:'';position:absolute;left:.6rem;top:.5rem;bottom:.5rem;width:2px;background:rgba(194,149,32,.35);}
+.tl-item{position:relative;margin-bottom:1.6rem;}
+.tl-item::before{content:'';position:absolute;left:-1.55rem;top:.4rem;width:12px;height:12px;background:var(--gold);border-radius:50%;}
+.tl-era{font-size:.72rem;color:var(--gold);letter-spacing:.12em;margin-bottom:.3rem;}
+.tl-body{font-size:.85rem;line-height:1.75;}
+
+/* ── INFO BOX ── */
+.info-box{background:#ECF4E8;border:1px solid var(--sage);padding:1.1rem 1.3rem;margin-bottom:1.75rem;font-size:.83rem;}
+.info-box h4{font-family:'Noto Serif JP',serif;font-size:.9rem;color:var(--sage);font-weight:600;margin-bottom:.4rem;letter-spacing:.08em;}
+
+/* ── FOOTER ── */
+footer{background:var(--ink2);color:rgba(244,237,212,.65);text-align:center;padding:1.75rem;font-size:.75rem;}
+
+/* ── PRINT ── */
+@media print{
+  .hero{background:#1C1928 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  #map{display:none;}
+  .slope-card.open .c-expand,.c-expand{display:block!important;}
+  .c-toggle{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<header class="hero">
+  <div class="hero-eyebrow">URBAN DESIGN FIELD STUDY ｜ 都市デザイン・フィールドワーク教材</div>
+  <h1>麻布の<span>坂</span><br>街歩きガイドブック</h1>
+  <p class="hero-sub">坂の個性から読む都市形成の歴史 ― 江戸から現代へ</p>
+  <div class="hero-chips">
+    <span class="chip">📍 東京都港区 麻布地区</span>
+    <span class="chip">🗺 掲載坂数 12か所</span>
+    <span class="chip">🚶 Aコース 約1.8km / Bコース 約2.5km</span>
+    <span class="chip">⏱ 所要時間 60〜120分</span>
+    <span class="chip">🚇 麻布十番駅発着（一部 広尾駅ゴール）</span>
+  </div>
+</header>
+
+<!-- ═══ TOPO PROFILE ═══ -->
+<div class="topo-wrap">
+  <div class="topo-label">【地形概略図】麻布台地と谷地の断面構造 ― 坂は「台地の縁」に刻まれる</div>
+  <svg viewBox="0 0 960 190" width="960" style="display:block;margin:0 auto;max-width:100%;" role="img" aria-label="麻布地区地形断面図">
+    <defs>
+      <linearGradient id="terrGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#7BA87C" stop-opacity=".45"/>
+        <stop offset="100%" stop-color="#B5C9A0" stop-opacity=".15"/>
+      </linearGradient>
+      <linearGradient id="valGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#85AACC" stop-opacity=".5"/>
+        <stop offset="100%" stop-color="#85AACC" stop-opacity=".1"/>
+      </linearGradient>
+    </defs>
+    <!-- Guide lines -->
+    <line x1="40" y1="165" x2="930" y2="165" stroke="#BBA870" stroke-width=".5" stroke-dasharray="3 3"/>
+    <text x="6" y="168" font-size="9" fill="#9B7B3A">0m</text>
+    <line x1="40" y1="135" x2="930" y2="135" stroke="#BBA870" stroke-width=".5" stroke-dasharray="3 3" opacity=".5"/>
+    <text x="6" y="138" font-size="9" fill="#9B7B3A">10</text>
+    <line x1="40" y1="105" x2="930" y2="105" stroke="#BBA870" stroke-width=".5" stroke-dasharray="3 3" opacity=".5"/>
+    <text x="6" y="108" font-size="9" fill="#9B7B3A">20</text>
+    <line x1="40" y1="75"  x2="930" y2="75"  stroke="#BBA870" stroke-width=".5" stroke-dasharray="3 3" opacity=".5"/>
+    <text x="6" y="78"  font-size="9" fill="#9B7B3A">30m</text>
+
+    <!-- Terrain fill (E to W schematic) -->
+    <!-- West Azabu ridge, Furukawa valley, Azabu-Juban, Moto-Azabu ridge, valley, Minami-Azabu, Hiroo plateau -->
+    <path d="
+      M 50,92 C 80,85 110,82 140,86
+      L 175,118 195,132 215,135
+      C 230,136 245,135 265,130
+      L 290,105 320,82 345,70
+      C 360,66 375,65 390,68
+      L 420,92 445,118 470,128
+      C 488,132 505,130 522,126
+      L 548,105 572,84 595,72
+      C 610,67 625,66 640,68
+      L 665,86 690,108 712,122
+      C 728,128 744,128 760,124
+      L 785,104 810,85 840,75
+      C 865,70 890,70 920,72
+      L 920,165 50,165 Z"
+      fill="url(#terrGrad)"/>
+    <!-- Terrain line -->
+    <path d="
+      M 50,92 C 80,85 110,82 140,86
+      L 175,118 195,132 215,135
+      C 230,136 245,135 265,130
+      L 290,105 320,82 345,70
+      C 360,66 375,65 390,68
+      L 420,92 445,118 470,128
+      C 488,132 505,130 522,126
+      L 548,105 572,84 595,72
+      C 610,67 625,66 640,68
+      L 665,86 690,108 712,122
+      C 728,128 744,128 760,124
+      L 785,104 810,85 840,75
+      C 865,70 890,70 920,72"
+      fill="none" stroke="#3D6B40" stroke-width="2.2"/>
+    <!-- Valley water fills -->
+    <path d="M 175,118 L 265,130 C 245,138 230,138 215,136 Z" fill="url(#valGrad)"/>
+    <path d="M 420,92 L 470,128 L 522,126 L 548,105" fill="url(#valGrad)" opacity=".6"/>
+    <path d="M 665,86 L 712,122 L 760,124 L 785,104" fill="url(#valGrad)" opacity=".5"/>
+
+    <!-- Valley labels -->
+    <text x="228" y="148" font-size="9" fill="#2A4D8A" text-anchor="middle">古川谷</text>
+    <text x="487" y="148" font-size="9" fill="#2A4D8A" text-anchor="middle">麻布十番谷</text>
+    <text x="725" y="148" font-size="9" fill="#2A4D8A" text-anchor="middle">広尾谷</text>
+
+    <!-- Slope markers with labels -->
+    <!-- 芋洗坂 -->
+    <circle cx="155" cy="103" r="5" fill="#9A6410"/>
+    <line x1="155" y1="98" x2="155" y2="60" stroke="#9A6410" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="155" y="54" font-size="8.5" fill="#9A6410" text-anchor="middle">芋洗坂</text>
+
+    <!-- 鳥居坂 -->
+    <circle cx="270" cy="128" r="5" fill="#8C2820"/>
+    <line x1="270" y1="123" x2="270" y2="16" stroke="#8C2820" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="270" y="10" font-size="8.5" fill="#8C2820" text-anchor="middle">鳥居坂</text>
+
+    <!-- 永坂 -->
+    <circle cx="310" cy="97" r="5" fill="#9A6410"/>
+    <line x1="310" y1="92" x2="310" y2="56" stroke="#9A6410" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="310" y="50" font-size="8.5" fill="#9A6410" text-anchor="middle">永坂</text>
+
+    <!-- 狸穴坂 -->
+    <circle cx="363" cy="67" r="5" fill="#3A6B3C"/>
+    <line x1="363" y1="62" x2="363" y2="22" stroke="#3A6B3C" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="363" y="16" font-size="8.5" fill="#3A6B3C" text-anchor="middle">狸穴坂</text>
+
+    <!-- 暗闇坂 -->
+    <circle cx="458" cy="122" r="5" fill="#3A6B3C"/>
+    <line x1="458" y1="117" x2="458" y2="56" stroke="#3A6B3C" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="458" y="50" font-size="8.5" fill="#3A6B3C" text-anchor="middle">暗闇坂</text>
+
+    <!-- 大黒坂 -->
+    <circle cx="530" cy="123" r="5" fill="#424680"/>
+    <line x1="530" y1="118" x2="530" y2="16" stroke="#424680" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="530" y="10" font-size="8.5" fill="#424680" text-anchor="middle">大黒坂</text>
+
+    <!-- 仙台坂 -->
+    <circle cx="645" cy="67" r="5" fill="#8C2820"/>
+    <line x1="645" y1="62" x2="645" y2="22" stroke="#8C2820" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="645" y="16" font-size="8.5" fill="#8C2820" text-anchor="middle">仙台坂</text>
+
+    <!-- 南部坂 -->
+    <circle cx="784" cy="101" r="5" fill="#8C2820"/>
+    <line x1="784" y1="96" x2="784" y2="56" stroke="#8C2820" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="784" y="50" font-size="8.5" fill="#8C2820" text-anchor="middle">南部坂</text>
+
+    <!-- Direction labels -->
+    <text x="50" y="182" font-size="9" fill="#7A5A1E">← 三田・飯倉方面 (東)</text>
+    <text x="880" y="182" font-size="9" fill="#7A5A1E" text-anchor="end">広尾・渋谷方面 (西) →</text>
+
+    <!-- Legend -->
+    <rect x="680" y="58" width="8" height="8" fill="#8C2820" rx="1"/>
+    <text x="692" y="66" font-size="8" fill="#555">武家系</text>
+    <rect x="730" y="58" width="8" height="8" fill="#3A6B3C" rx="1"/>
+    <text x="742" y="66" font-size="8" fill="#555">自然系</text>
+    <rect x="778" y="58" width="8" height="8" fill="#9A6410" rx="1"/>
+    <text x="790" y="66" font-size="8" fill="#555">商業系</text>
+    <rect x="828" y="58" width="8" height="8" fill="#424680" rx="1"/>
+    <text x="840" y="66" font-size="8" fill="#555">信仰系</text>
+  </svg>
+</div>
+
+<!-- ═══ INTRO ═══ -->
+<div style="background:var(--washi2);border-bottom:1px solid rgba(122,90,30,.18);">
+  <div class="outer" style="padding:1.75rem 1.25rem;">
+    <div class="info-box">
+      <h4>◉ このガイドブックの使い方</h4>
+      <p>港区には89の坂があり、そのうち麻布地区には大小<strong>42の坂</strong>が集中しています。各坂の名称には江戸時代の記憶が凝縮されており、由来を読み解くことで<strong>「武家地・寺社地・町人地」の空間分布</strong>と、それが現代都市にどう引き継がれてきたかが見えてきます。</p>
+      <p style="margin-top:.4rem;">街歩きでは「坂の個性（勾配・方角・命名由来）」と「現在の街のキャラクター（土地利用・来訪者・建物年代）」の<strong>対応関係</strong>を観察・記録し、都市形成の論理を考察してください。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 01 : MAP ═══ -->
+<div style="background:var(--washi);">
+  <div class="outer">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <div><div class="sec-title">インタラクティブ坂マップ</div>
+      <div class="sec-sub">マーカーをクリックすると坂の情報が表示されます ／ 赤点線＝Aコース　青点線＝Bコース</div></div>
+    </div>
+
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--feudal)"></div>武家屋敷系（大名・旗本屋敷に由来）</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--nature)"></div>自然地形系（動植物・地形の特徴に由来）</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--commercial)"></div>商業生活系（町人の生業・日常に由来）</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--religion)"></div>信仰社寺系（寺社・宗教施設に由来）</div>
+    </div>
+
+    <div id="map"></div>
+    <p class="map-note">※地図ベース：© OpenStreetMap contributors　各坂の位置は概略を示します</p>
+  </div>
+</div>
+
+<!-- ═══ SECTION 02 : SLOPE CATALOG ═══ -->
+<div style="background:var(--washi2);border-top:1px solid rgba(122,90,30,.15);">
+  <div class="outer">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <div><div class="sec-title">坂カタログ</div>
+      <div class="sec-sub">カードをクリックすると「現代の街」と「調査課題」が展開されます</div></div>
+    </div>
+    <div class="slope-grid" id="slopeGrid"></div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 03 : ROUTES ═══ -->
+<div style="background:var(--washi);">
+  <div class="outer">
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <div><div class="sec-title">街歩きコース案</div>
+      <div class="sec-sub">テーマ別 2 ルート ― 地形と歴史の「論理」を体感する</div></div>
+    </div>
+    <div class="route-grid">
+
+      <!-- A コース -->
+      <div class="route-card">
+        <span class="r-tag a">A コース</span>
+        <div class="r-title">北麻布・六本木の坂<br>「妖怪・大名・江戸の商業」</div>
+        <div class="r-meta">📏 約1.8 km ｜ ⏱ 60〜75 分 ｜ 🚇 麻布十番駅スタート→六本木</div>
+        <ul class="r-stops">
+          <li class="endpoint">🚇 麻布十番駅（南北線・大江戸線 7番出口）</li>
+          <li><strong>永坂</strong> ― 江戸最古級の坂名（1657年記録）。永坂更科の老舗</li>
+          <li><strong>鼠坂</strong> ― 「鼠しか通れぬ細道」。島崎藤村旧居跡</li>
+          <li><strong>狸穴坂</strong> ― ロシア大使館脇。麻布七不思議の穴</li>
+          <li><strong>鳥居坂</strong> ― フィリピン大使館・東洋英和女学院の坂</li>
+          <li><strong>芋洗坂</strong> ― 吉野川で芋を洗った小川の記憶</li>
+          <li><strong>饂飩坂</strong> ― 江戸の食文化が刻まれた商業の坂</li>
+          <li class="endpoint">🎯 六本木ヒルズ / 毛利庭園（大名庭園の面影）</li>
+        </ul>
+        <div class="r-theme a">
+          <strong>🔬 テーマ：</strong>江戸時代の「城南郊外・武家地」が、どのプロセスで「国際的な大使館・飲食街」に転換したか、空間的変容の論理を考察する。
+        </div>
+      </div>
+
+      <!-- B コース -->
+      <div class="route-card">
+        <span class="r-tag b">B コース</span>
+        <div class="r-title">元麻布・南麻布の坂<br>「霊域・屋敷街・国際化の重層史」</div>
+        <div class="r-meta">📏 約2.5 km ｜ ⏱ 90〜120 分 ｜ 🚇 麻布十番駅→広尾駅</div>
+        <ul class="r-stops">
+          <li class="endpoint">🚇 麻布十番駅（南北線・大江戸線 4番出口）</li>
+          <li><strong>大黒坂</strong> ― 港七福神・大法寺のある宗教地形</li>
+          <li><strong>暗闇坂</strong> ― オーストリア大使館。昼なお暗い急坂・幽霊坂</li>
+          <li><strong>一本松坂</strong> ― 麻布七不思議の一本松。四叉路の結節点</li>
+          <li><strong>狸坂</strong> ― 妖狐・旭坂とも。江戸の霊的境界</li>
+          <li><strong>仙台坂</strong> ― 韓国大使館。伊達仙台藩下屋敷の地</li>
+          <li><strong>南部坂</strong> ― ドイツ大使館・有栖川宮記念公園</li>
+          <li>🌳 有栖川宮記念公園（南部藩→宮家→都立公園の変遷を確認）</li>
+          <li class="endpoint">🚇 広尾駅（東京メトロ日比谷線）</li>
+        </ul>
+        <div class="r-theme b">
+          <strong>🔬 テーマ：</strong>「大名屋敷（坂上の高台）→大使館・高級住宅地」という土地利用変遷のパターンを記録し、地形条件・権威・セキュリティの関係を分析する。
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 04 : WORKSHEET ═══ -->
+<div style="background:#EEF4E8;border-top:2px solid var(--sage);">
+  <div class="outer">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <div><div class="sec-title">フィールドワーク調査シート</div>
+      <div class="sec-sub">各坂で記入・スケッチする ― 記入後に班でクロス集計・考察を行う</div></div>
+    </div>
+    <div class="ws-grid">
+
+      <div class="ws-box">
+        <div class="ws-h">A. 坂の地形記録</div>
+        <div class="ws-field">
+          <div>坂の名前：<span style="border-bottom:1px solid #aaa;display:inline-block;width:120px;">&nbsp;</span></div>
+          <div>方位（上り方向）：□東　□西　□南　□北</div>
+          <div>勾配感：□緩やか　□中程度　□かなり急</div>
+          <div>道幅：□細（〜3m）　□中（〜6m）　□広（〜10m+）</div>
+          <div>路面：□アスファルト　□石畳　□その他</div>
+          <div style="margin-top:.4rem;">断面スケッチ（自由記入）：</div>
+          <div class="ws-line" style="height:60px;"></div>
+        </div>
+      </div>
+
+      <div class="ws-box">
+        <div class="ws-h">B. 現代の土地利用・人の観察</div>
+        <div class="ws-field">
+          <div>坂沿いの主な土地利用（複数可）：</div>
+          <div>□住宅　□大使館　□商業店舗　□寺社　□学校　□公園</div>
+          <div>建物の印象（年代・様式）：</div>
+          <div class="ws-line"></div>
+          <div>歩行者の特徴（国籍・年齢層・目的）：</div>
+          <div class="ws-line"></div>
+          <div>「江戸の記憶」を感じさせる要素：</div>
+          <div class="ws-line"></div>
+        </div>
+      </div>
+
+      <div class="ws-box">
+        <div class="ws-h">C. 坂の「個性」を言語化する</div>
+        <div class="ws-field">
+          <div>この坂を一言で形容するとしたら？</div>
+          <div class="ws-line"></div>
+          <div>坂名と現在の雰囲気は一致しているか？</div>
+          <div>□よく一致　□やや一致　□一致しない　□逆転している</div>
+          <div>そう感じた理由：</div>
+          <div class="ws-line" style="height:40px;"></div>
+          <div>「坂上」と「坂下」の街の違いを記述せよ：</div>
+          <div class="ws-line" style="height:40px;"></div>
+        </div>
+      </div>
+
+      <div class="ws-box">
+        <div class="ws-h">D. 都市形成の考察問い</div>
+        <div class="ws-field" style="font-size:.8rem;line-height:1.9;">
+          <p>⑴ 大名屋敷跡が大使館になったのはなぜか？ 地形・規模・権威性の観点から。</p>
+          <p style="margin-top:.3rem;">⑵ 急勾配の坂は現代の都市機能（車・物流・高齢者）にどう影響しているか？</p>
+          <p style="margin-top:.3rem;">⑶ 坂名に「動物・妖怪・暗闇」が多い理由を、江戸の都市境界認識から考えよ。</p>
+          <p style="margin-top:.3rem;">⑷ 「坂の個性」は現在の地価・業種・来訪者に影響しているか？</p>
+          <div class="ws-line" style="height:50px;margin-top:.4rem;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TIMELINE ═══ -->
+<div class="tl-wrap">
+  <div class="tl-inner">
+    <div class="tl-title">麻布の坂と都市形成 ― 歴史年表</div>
+    <div class="tl-list">
+
+      <div class="tl-item">
+        <div class="tl-era">平安〜戦国期（10〜16世紀）</div>
+        <div class="tl-body">源経基が東征の際、麻布一本松付近に氷川神社を創建（天慶5年/942年）。「阿佐布」の地名は1559年の文書に初出。麻・布の産地としての村落が形成されていた。</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-era">江戸時代前期（1600〜1700年）</div>
+        <div class="tl-body">慶長年間（1596〜1615）に大名・旗本屋敷が台地上に展開。谷底（麻布十番）に善福寺門前町・商人町が発達。永坂の名は1657年（明暦3年）の「新添江戸之圖」に記録され、東京では上野の車坂に次ぐ古い坂名とされる。仙台藩・南部藩・鳥居藩など奥州・東国の大名下屋敷が集中。</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-era">江戸時代後期（1700〜1868年）</div>
+        <div class="tl-body">麻布十番が「坂下の商業地」として繁栄。芋洗坂・饂飩坂など庶民の生業に由来する坂名が定着。暗闇坂・狸穴坂・狸坂・鼠坂など「霊的境界」を示す命名が台地縁辺部に集中。松尾芭蕉「うぐいすをたずねてたずねて阿佐布まで」（仙台坂付近で詠まれた）。</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-era">明治時代（1868〜1912年）</div>
+        <div class="tl-body">大名屋敷跡に外国公使館・大使館が相次いで設置される（善福寺＝米国公使館・領事館）。鳥居坂に東洋英和女学校開校（1884年）。有栖川宮記念公園となる南部藩屋敷跡が宮家用地へ転換。「高台＝大使館・学校・宮家」の構図が確立。</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-era">大正〜昭和前期（1912〜1945年）</div>
+        <div class="tl-body">関東大震災後の区画整理で麻布が高級住宅地として再建。島崎藤村が鼠坂近く（麻布台）に18年間居住し、『夜明け前』『夜明け前（第二部）』などを執筆。慶應義塾ラグビー部が仙台坂下「仙台原」で日本初の公式試合（1899年）。</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-era">昭和後期〜現代（1960年代〜）</div>
+        <div class="tl-body">住居表示変更（昭和40〜50年代）で多くの旧町名が消滅するが、「麻布永坂町」「麻布狸穴町」は旧名を保持。港区内に約70か国の大使館が集中する「外交の街」が完成。六本木ヒルズ再開発（2003年）が坂道を商業コンテンツとして再活用。麻布台ヒルズ（2023年）の開発でも坂の地形が都市設計に組み込まれる。</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>麻布の坂 街歩きガイドブック ｜ 都市デザイン・フィールドワーク教材</p>
+  <p style="margin-top:.4rem;opacity:.5;">参考文献：港区教育委員会「麻布の坂」・港区ホームページ「麻布の坂」・三井住友トラスト不動産「このまちアーカイブス」・各坂 Wikipedia・横関英一『江戸の坂 東京の坂』筑摩書房 ほか</p>
+</footer>
+
+<!-- ══════ JS ══════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ── Slope data ── */
+const slopes=[
+  {
+    id:'imoarai',name:'芋洗坂',kana:'いもあらいざか',area:'六本木5・6丁目',
+    lat:35.6614,lng:139.7320,type:'commercial',
+    origin:'坂沿いを流れた吉野川（小川）で農民が芋を洗ったことに由来。坂近くの稲荷神社の市で芋が売買されたとする説もある。江戸では稲荷の縁日市が都市の社交空間を形成した。',
+    today:'六本木ヒルズと麻布十番を結ぶ賑やかな飲食街。多国籍レストランが軒を連ね、昼夜を問わず人通りが絶えない。川の痕跡は完全に消え、坂名にのみ記憶が宿る。',
+    landmark:'六本木ヒルズ（毛利庭園）・毛利家史跡・多国籍飲食店群',
+    inv:'現在の店舗の「国籍」と「客層」を10分間観察し、「農村の川辺」がどのように国際的飲食街へ変容したかを考察せよ。地形（谷地形）と商業集積の関係にも注目。'
+  },
+  {
+    id:'udon',name:'饂飩坂',kana:'うどんざか',area:'六本木5丁目',
+    lat:35.6617,lng:139.7307,type:'commercial',
+    origin:'寛文年間（1678年）まで坂沿いにうどん屋があったことから命名。芋洗坂の途中から右に分岐する小坂で、江戸の商業が盛んだった下町的な性格を示す。',
+    today:'六本木の繁華街の一角。坂名が示す「庶民の食文化」と現代の高級飲食・ナイトクラブが混在するエリアとのギャップが際立つ。',
+    landmark:'六本木商業施設群・アークヒルズ',
+    inv:'「芋洗坂」「饂飩坂」という食由来の坂名が隣接している。江戸時代の「谷地形」と「食商業」の立地関係を地図で確認し、現代でも同パターンが成立しているか調べよ。'
+  },
+  {
+    id:'torii',name:'鳥居坂',kana:'とりいざか',area:'六本木5丁目',
+    lat:35.6590,lng:139.7321,type:'feudal',
+    origin:'慶長年間（1596〜1615）に坂上一帯が大名・鳥居家（矢作藩・磐城平藩など）の屋敷として賜ったことに由来。江戸砂子にも「鳥居彦右衛門の拝領地」として記載。別説として麻布氷川神社の二の鳥居があったとも。',
+    today:'フィリピン大使館・港区麻布総合支所（旧麻布区役所）・東洋英和女学院・国際文化会館（旧岩崎小弥太邸）・シンガポール大使館が坂沿いに連なる。大使館・私立学校への転換が最も典型的に読めるランドマーク坂。',
+    landmark:'フィリピン大使館・東洋英和女学院（1884年開校）・国際文化会館・シンガポール大使館',
+    inv:'「大名屋敷→外国大使館・私立学校」という転換はなぜ同じ場所で起きたのか？「高台の広大な敷地・アクセス困難性・権威的景観」の3条件から考察せよ。'
+  },
+  {
+    id:'naga',name:'永坂',kana:'ながさか',area:'六本木5丁目〜麻布永坂町',
+    lat:35.6605,lng:139.7344,type:'commercial',
+    origin:'麻布台地上から麻布十番へ下る「長い坂」が由来。東京の坂名として上野の車坂に次ぐ古い記録を持ち、1657年（明暦3年）の「新添江戸之圖」に既に記載される。長坂氏の屋敷があったとの説もある。',
+    today:'坂の上に老舗蕎麦「永坂更科 布屋太兵衛」が現存。正岡子規が詠んだ句「蕎麦屋出て永坂上がる寒さかな」でも知られる。「麻布永坂町」は現代に旧町名を保持する希少な地名。',
+    landmark:'永坂更科 布屋太兵衛（江戸創業の老舗そば）・麻布永坂町（旧町名）',
+    inv:'住居表示変更で大半の旧町名が消滅した中で「麻布永坂町」だけが残ったのはなぜか？地名の継続・消滅の条件（老舗企業の存在・メディア露出・住民組織）を調べよ。'
+  },
+  {
+    id:'mamiana',name:'狸穴坂',kana:'まみあなざか',area:'麻布台2丁目（旧麻布狸穴町）',
+    lat:35.6625,lng:139.7362,type:'nature',
+    origin:'「まみ」はメス狸・ムササビ・アナグマの類で、坂下に棲む大きな穴があったことに由来。採掘の穴（「まぶ穴」＝鉱山の穴）だったとする説もあり、麻布七不思議のひとつ。江戸の地図にも大きく坂名が記される歴史的坂道。',
+    today:'ロシア連邦大使館が坂上脇に位置。東京アメリカンクラブ（旧尾張藩主徳川慶勝邸跡）・狸穴公園・狸穴稲荷神社が坂下に。「麻布狸穴町」は旧町名を今も保持。',
+    landmark:'ロシア大使館・東京アメリカンクラブ・狸穴公園・狸穴稲荷神社',
+    inv:'ロシア大使館と東京アメリカンクラブが隣接するこの急坂を、冷戦期の「地政学的布置」の観点から考察せよ。なぜ対立する2国の施設が同じ坂に共存するのか？'
+  },
+  {
+    id:'nezumi',name:'鼠坂',kana:'ねずみざか',area:'麻布台2丁目',
+    lat:35.6628,lng:139.7354,type:'nature',
+    origin:'かつては「鼠しか通れない」ほど細い道だったことが由来。江戸では細長く狭い道を「ねずみ坂」と呼ぶ習慣があった。狸穴坂の西を並行して走る。',
+    today:'小説家・島崎藤村が47歳〜65歳（約18年間）まで近隣に居住し、『夜明け前』などを執筆した地。坂上に藤村旧居跡の石碑が残る。現在は閑静な高級住宅街。',
+    landmark:'島崎藤村旧居跡（石碑）・麻布台ヒルズ周辺の再開発エリア',
+    inv:'藤村はなぜ「鼠しか通れぬ細道の近く」に18年も居住したのか？作家・芸術家が「坂の街」に集積する理由を、家賃・景観・プライバシー・交通の観点から考察せよ。'
+  },
+  {
+    id:'kurayami',name:'暗闇坂',kana:'くらやみざか',area:'麻布十番2丁目〜元麻布3丁目',
+    lat:35.6572,lng:139.7330,type:'nature',
+    origin:'昼間でも暗いほど鬱蒼と木々が茂り、狭い急坂に覆いかぶさっていたことから命名。別名「幽霊坂」「宮村坂」とも。妖怪・追い剥ぎが出没したと伝えられ、麻布の「霊的境界」を代表する坂。はっぴいえんど「暗闇坂むささび変化」（アルバム『風街ろまん』）の舞台。',
+    today:'かなりの急勾配の一方通行路。中腹左手にオーストリア大使館が建つ。坂を上りきると一本松交差点（4坂の合流点）に至る。かつての鬱蒼とした木々は減少したが、急カーブと路面の滑り止めに往時の険しさが残る。',
+    landmark:'オーストリア大使館・一本松交差点（4坂合流点）・麻布一本松',
+    inv:'急勾配の「暗坂」に大使館が立地する理由を「セキュリティ・プライバシー・権威的景観・隔絶性」の観点から分析せよ。地形的な「難アクセス性」が現代でもどう機能しているか。'
+  },
+  {
+    id:'daikoku',name:'大黒坂',kana:'だいこくざか',area:'元麻布1丁目',
+    lat:35.6577,lng:139.7350,type:'religion',
+    origin:'坂の中腹北側に港区七福神のひとつ大黒天を祀る「大法寺」があったことから命名。「大国坂」とも表記される。麻布十番の繁栄を支えた宗教的地形の核心。',
+    today:'大法寺は現在も存続し、毎年1〜2月の「港七福神巡り」のルートに含まれる。坂沿いは住宅と小規模商業が混在する生活エリア。「七福神まいり」という江戸発の都市観光フォーマットが現代も継続。',
+    landmark:'大法寺（大黒天・港七福神）・麻布十番商店街',
+    inv:'「七福神巡り」は江戸時代に発明された都市観光フォーマットである。なぜこの文化形式は現代でも消えないのか？宗教・観光・地形・商業の結節点として坂をどう位置付けるか考察せよ。'
+  },
+  {
+    id:'ipponmatsu',name:'一本松坂',kana:'いっぽんまつざか',area:'元麻布1〜3丁目',
+    lat:35.6563,lng:139.7338,type:'nature',
+    origin:'源経基（みなもとのつねもと）の伝説を持つ「一本松」が坂の南側にあることに由来。『江戸名所図会』にも「麻布一本松」として描かれ、麻布七不思議のひとつ。池波正太郎『鬼平犯科帳』短編「麻布一本松」の舞台にもなった。',
+    today:'暗闇坂・大黒坂・狸坂と接する珍しい四叉路（一本松交差点）が都市の結節点となっている。一本松は明治以後二度植え替えられたが現存。元麻布ヒルズ・高級マンションが近接し、静かな高台住宅地の中に江戸の霊木が立つ特異な景観。',
+    landmark:'一本松（江戸名所図会掲載）・一本松交差点（4坂の合流点）・元麻布ヒルズ',
+    inv:'4本の坂が合流する「一本松交差点」はなぜこの場所に生まれたのか？台地の尾根筋と谷地の接点を地形図で確認し、「地形の論理が道路ネットワークを決定する」メカニズムを考察せよ。'
+  },
+  {
+    id:'tanuki',name:'狸坂',kana:'たぬきざか',area:'元麻布1〜3丁目',
+    lat:35.6558,lng:139.7325,type:'nature',
+    origin:'人を化かす狸が出没したといわれたことに由来。別名「旭坂」とも（東へ上るため）。一本松交差点から下る坂で、暗闇坂・大黒坂・一本松坂と合流する。',
+    today:'閑静な高級住宅地。坂名から妖怪の気配は消え、整備された歩道と現代建築が並ぶ。「狸穴（狸穴坂）」と「狸坂」が別の坂として存在することに注目したい。',
+    landmark:'一本松交差点・元麻布の高級マンション群',
+    inv:'麻布には「狸穴坂」「狸坂」のほか「鼠坂」など動物地名が多い。これは江戸時代の「都市の縁辺・霊的境界」認識とどう関係するか？現代の「境界」（大使館の塀・高級マンションの壁）との類似を考えよ。'
+  },
+  {
+    id:'sendai',name:'仙台坂',kana:'せんだいざか',area:'南麻布1丁目〜元麻布1丁目',
+    lat:35.6545,lng:139.7387,type:'feudal',
+    origin:'坂の南側一帯が仙台藩松平陸奥守（伊達家）の下屋敷だったことに由来。麻布の中でも規模の大きな坂。松尾芭蕉が「うぐいすをたずねてたずねて阿佐布まで」と詠んだ地。1899年に慶應義塾ラグビーフットボールクラブが「仙台原」を初の練習場として日本ラグビーを始めた。',
+    today:'韓国大使館（仙台藩下屋敷跡付近）・広幅の交通量の多い坂。TOKYO FM「サントリー・サタデー・ウェイティング・バー」の架空の舞台として知られる。坂上の「仙台味噌醸造所」（品川の仙台坂）とは別の地。',
+    landmark:'韓国大使館・麻布十番商店街（坂下）・仙台坂上交差点',
+    inv:'仙台藩（奥州の雄藩）の下屋敷が、現在は韓国大使館として使われている。「奥州の大藩」と「朝鮮半島の外交機関」が同じ土地に立地する歴史的偶然を、日本の外交史・土地政策の変遷から考察せよ。'
+  },
+  {
+    id:'nanbu',name:'南部坂',kana:'なんぶざか',area:'南麻布4〜5丁目',
+    lat:35.6510,lng:139.7342,type:'feudal',
+    origin:'江戸時代に現在の有栖川宮記念公園付近に奥州南部藩（盛岡藩）の中屋敷があったことから命名。険しさゆえ「難歩坂」とも表記された。麻布らしさを象徴する美しい坂道として広く知られる。',
+    today:'坂上にドイツ大使館、坂下に南部坂教会・ナショナル麻布（外国人向け高級スーパー）・広尾フランス語学校。有栖川宮記念公園（南部藩→宮家→都立公園）が隣接。港区最高峰の国際色豊かな高級住宅地エリア。',
+    landmark:'ドイツ大使館・有栖川宮記念公園・南部坂教会・ナショナル麻布・広尾フランス語学校',
+    inv:'「南部藩屋敷→有栖川宮御用地→東京市への寄贈→都立記念公園」という変遷は権力移行を土地利用が映し出した事例だ。このような「権威継承型」土地利用変遷のパターンを他の公園・大使館で探せ。'
+  },
+];
+
+/* ── Build cards ── */
+const grid=document.getElementById('slopeGrid');
+const typeLabel={feudal:'武家屋敷系',nature:'自然地形系',commercial:'商業生活系',religion:'信仰社寺系'};
+slopes.forEach(s=>{
+  const card=document.createElement('div');
+  card.className=`slope-card ${s.type}`;
+  card.innerHTML=`
+    <span class="c-badge ${s.type}">${typeLabel[s.type]}</span>
+    <div class="c-name">${s.name}</div>
+    <div class="c-kana">${s.kana} ｜ ${s.area}</div>
+    <div class="c-label">【名称の由来・歴史】</div>
+    <div class="c-text">${s.origin}</div>
+    <div class="c-expand">
+      <div class="c-label">【現在の街の姿】</div>
+      <div class="c-text">${s.today}</div>
+      <div class="c-label" style="margin-top:.5rem;">【主なランドマーク】</div>
+      <div class="c-text" style="color:var(--sepia);">${s.landmark}</div>
+      <div class="c-inv">
+        <strong>🔍 学生調査課題</strong>
+        ${s.inv}
+      </div>
+    </div>
+    <div class="c-toggle">クリックで詳細を展開 ▼</div>
+  `;
+  card.addEventListener('click',()=>{
+    card.classList.toggle('open');
+    const t=card.querySelector('.c-toggle');
+    t.textContent=card.classList.contains('open')?'折りたたむ ▲':'クリックで詳細を展開 ▼';
+  });
+  grid.appendChild(card);
+});
+
+/* ── Leaflet map ── */
+const map=L.map('map').setView([35.6580,139.7342],15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom:18
+}).addTo(map);
+
+/* Custom pin icon */
+function makeIcon(type){
+  const cols={feudal:'#8C2820',nature:'#3A6B3C',commercial:'#9A6410',religion:'#424680'};
+  const c=cols[type]||'#555';
+  return L.divIcon({
+    className:'',
+    html:`<div style="
+      position:relative;width:28px;height:28px;
+      background:${c};border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);border:2px solid white;
+      box-shadow:0 2px 5px rgba(0,0,0,.35);
+    "></div>`,
+    iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-30]
+  });
+}
+
+/* Slope markers */
+slopes.forEach(s=>{
+  L.marker([s.lat,s.lng],{icon:makeIcon(s.type)}).addTo(map)
+    .bindPopup(`
+      <div style="font-family:'Noto Sans JP',sans-serif;min-width:210px;padding:4px;">
+        <div style="font-size:1.05rem;font-weight:700;color:#1C1928;margin-bottom:2px;">${s.name}</div>
+        <div style="font-size:.72rem;color:#7A5A1E;margin-bottom:6px;">${s.kana} ｜ ${s.area}</div>
+        <div style="font-size:.78rem;color:#444;border-top:1px solid #eee;padding-top:5px;margin-bottom:4px;">${s.origin.slice(0,90)}…</div>
+        <div style="font-size:.72rem;color:#2A4D8A;">${s.landmark}</div>
+      </div>`,{maxWidth:260});
+});
+
+/* Additional landmarks */
+const landmarks=[
+  {name:'麻布十番駅',lat:35.6576,lng:139.7384,col:'#444',sym:'M'},
+  {name:'広尾駅',lat:35.6492,lng:139.7240,col:'#444',sym:'M'},
+  {name:'有栖川宮記念公園',lat:35.6514,lng:139.7287,col:'#3A6B3C',sym:'P'},
+  {name:'善福寺',lat:35.6605,lng:139.7363,col:'#424680',sym:'T'},
+  {name:'麻布氷川神社',lat:35.6554,lng:139.7317,col:'#424680',sym:'S'},
+  {name:'六本木ヒルズ',lat:35.6606,lng:139.7292,col:'#9A6410',sym:'H'},
+  {name:'東洋英和女学院',lat:35.6591,lng:139.7301,col:'#8C2820',sym:'E'},
+];
+landmarks.forEach(lm=>{
+  const icon=L.divIcon({
+    className:'',
+    html:`<div style="
+      width:20px;height:20px;background:${lm.col};
+      border-radius:3px;border:2px solid white;
+      box-shadow:0 1px 3px rgba(0,0,0,.3);
+      display:flex;align-items:center;justify-content:center;
+      color:white;font-size:9px;font-weight:700;
+    ">${lm.sym}</div>`,
+    iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-12]
+  });
+  L.marker([lm.lat,lm.lng],{icon}).addTo(map)
+    .bindPopup(`<div style="font-family:sans-serif;font-size:.85rem;font-weight:bold;">${lm.name}</div>`,{maxWidth:160});
+});
+
+/* Route A (red dashed) */
+L.polyline([
+  [35.6576,139.7384],[35.6605,139.7344],[35.6628,139.7354],
+  [35.6625,139.7362],[35.6590,139.7321],[35.6614,139.7320],[35.6617,139.7307]
+],{color:'#C23429',weight:3,dashArray:'8 5',opacity:.75}).addTo(map);
+
+/* Route B (blue dashed) */
+L.polyline([
+  [35.6576,139.7384],[35.6577,139.7350],[35.6572,139.7330],
+  [35.6563,139.7338],[35.6558,139.7325],[35.6545,139.7387],
+  [35.6510,139.7342],[35.6514,139.7287],[35.6492,139.7240]
+],{color:'#2A4D8A',weight:3,dashArray:'8 5',opacity:.75}).addTo(map);
+
+/* Map legend */
+const mapLeg=L.control({position:'bottomright'});
+mapLeg.onAdd=function(){
+  const d=L.DomUtil.create('div','');
+  d.style.cssText='background:rgba(255,255,255,.95);padding:8px 12px;border:1px solid #bbb;font-family:sans-serif;font-size:11px;border-radius:2px;line-height:1.8;';
+  d.innerHTML=`
+    <b style="font-size:10px;letter-spacing:.1em;">ルート</b><br>
+    <span style="display:inline-block;width:18px;height:2px;background:#C23429;vertical-align:middle;margin-right:4px;border-top:2px dashed #C23429;"></span>Aコース（赤）<br>
+    <span style="display:inline-block;width:18px;height:2px;background:#2A4D8A;vertical-align:middle;margin-right:4px;border-top:2px dashed #2A4D8A;"></span>Bコース（青）<br>
+    <hr style="margin:4px 0;border-color:#ddd;">
+    <b style="font-size:10px;letter-spacing:.1em;">記号</b><br>
+    M=駅　P=公園　T=寺　S=社<br>H=ヒルズ　E=学校
+  `;
+  return d;
+};
+mapLeg.addTo(map);
+</script>
+</body>
+</html>
